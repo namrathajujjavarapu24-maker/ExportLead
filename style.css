@@ -1,188 +1,634 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ExportLead AI</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <aside class="sidebar" id="sidebar">
-    <div class="brand">ExportLead <span>AI</span></div>
-    <nav id="nav">
-      <button data-view="dashboard" class="active">📊 Dashboard</button>
-      <button data-view="discover">🔎 Discover Buyers</button>
-      <button data-view="leads">👥 Manage Leads</button>
-      <button data-view="validation">✅ Email Validation</button>
-      <button data-view="classification">🤖 AI Classification</button>
-      <button data-view="marketing">✉️ Email Marketing</button>
-      <button data-view="importexport">📁 Import / Export</button>
-      <button data-view="reports">📈 Reports</button>
-    </nav>
-    <div class="sidebar-foot">Front-end demo · data stays in your browser</div>
-  </aside>
+:root {
+  --navy: #14213d;
+  --navy-2: #1d2f57;
+  --accent: #2563eb;
+  --accent-dark: #1d4ed8;
+  --bg: #f3f5f9;
+  --card: #ffffff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --green: #16a34a;
+  --red: #dc2626;
+  --orange: #ea580c;
+  --radius: 10px;
+}
 
-  <div class="main">
-    <header class="topbar">
-      <button class="menu-btn" id="menuBtn" aria-label="Menu">☰</button>
-      <h1 id="pageTitle">Dashboard</h1>
-      <button class="btn btn-primary" id="addLeadTop">+ Add Lead</button>
-    </header>
-    <div id="toasts"></div>
+* {
+  box-sizing: border-box;
+}
 
-    <main class="content">
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.45;
+}
 
-      <!-- DASHBOARD -->
-      <section class="view" id="view-dashboard">
-        <div class="notice" id="sampleNotice" hidden></div>
-        <div class="cards" id="statCards"></div>
-        <div class="grid-2">
-          <div class="card"><h2>Leads by Country</h2><div id="dashCountry"></div></div>
-          <div class="card"><h2>Leads by Buyer Category</h2><div id="dashCategory"></div></div>
-        </div>
-        <div class="card">
-          <div class="card-head"><h2>Recent Leads</h2>
-            <select id="dashFilter"><option value="">All countries</option></select></div>
-          <div class="table-wrap"><table id="dashTable"></table></div>
-        </div>
-      </section>
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
 
-      <!-- DISCOVER -->
-      <section class="view" id="view-discover" hidden>
-        <div class="card">
-          <h2>Find potential buyers</h2>
-          <form id="discoverForm" class="form-grid">
-            <label>Product name *<input id="dProduct" placeholder="e.g. Singing Bowls" required></label>
-            <label>Target country<input id="dCountry" placeholder="e.g. United States"></label>
-            <label>State<input id="dState" placeholder="e.g. California"></label>
-            <label>City<input id="dCity" placeholder="e.g. Los Angeles"></label>
-            <label>Buyer category<select id="dCategory"></select></label>
-            <div class="form-actions"><button class="btn btn-primary" type="submit">Build search links</button></div>
-          </form>
-          <p class="muted small">This builds search links to public sources. Open a link, read the public business details (About Us / Contact Us), then save the lead. Nothing is scraped.</p>
-        </div>
-        <div id="discoverResult"></div>
-      </section>
+a:hover {
+  text-decoration: underline;
+}
 
-      <!-- LEADS -->
-      <section class="view" id="view-leads" hidden>
-        <div class="card">
-          <div class="filters">
-            <input type="search" id="fQ" placeholder="Search name, company, email, city, product…">
-            <select id="fCountry"><option value="">All countries</option></select>
-            <select id="fCategory"><option value="">All categories</option></select>
-            <select id="fStatus"><option value="">All statuses</option></select>
-            <select id="fEmail"><option value="">Any email status</option>
-              <option>Valid format</option><option>Invalid format</option><option>No email</option></select>
-            <select id="fData"><option value="">Sample + real</option><option value="sample">Sample only</option><option value="real">Real only</option></select>
-            <button class="btn" id="fClear">Clear</button>
-          </div>
-          <p class="muted small" id="leadCount"></p>
-          <div class="table-wrap"><table id="leadTable"></table></div>
-        </div>
-      </section>
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 240px;
+  background: var(--navy);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+}
 
-      <!-- VALIDATION -->
-      <section class="view" id="view-validation" hidden>
-        <div class="card">
-          <h2>Check an email</h2>
-          <div class="filters"><input id="vInput" type="text" placeholder="name@company.com">
-            <button class="btn btn-primary" id="vCheck">Validate</button><span id="vResult"></span></div>
-          <p class="muted small">Format validation only checks that the address is written correctly. It does not prove the mailbox exists or that an email will be delivered.</p>
-        </div>
-        <div class="card"><h2>Saved lead emails</h2><div class="table-wrap"><table id="validationTable"></table></div></div>
-      </section>
+.brand {
+  font-size: 22px;
+  font-weight: 700;
+  padding: 22px 20px;
+  letter-spacing: .3px;
+}
 
-      <!-- CLASSIFICATION -->
-      <section class="view" id="view-classification" hidden>
-        <div class="card">
-          <h2>Classify buyers</h2>
-          <p class="muted small">Labelled <strong>Rule-based (not AI)</strong>. Gemini AI classification needs the backend and an API key.</p>
-          <button class="btn btn-primary" id="runClassify">Classify unclassified leads</button>
-        </div>
-        <div class="card"><div class="table-wrap"><table id="classTable"></table></div></div>
-      </section>
+.brand span {
+  color: #60a5fa;
+}
 
-      <!-- MARKETING -->
-      <section class="view" id="view-marketing" hidden>
-        <div class="grid-2">
-          <div class="card">
-            <h2>Compose email</h2>
-            <div class="stack">
-              <label>Buyer (saved leads with an email)<select id="mLead"></select></label>
-              <label>Your company<input id="mSender" placeholder="Your company name"></label>
-              <label>Product<input id="mProduct" placeholder="e.g. hand-hammered singing bowls"></label>
-              <button class="btn" id="mGenerate">Generate personalized email</button>
-              <label>Subject<input id="mSubject"></label>
-              <label>Message<textarea id="mBody" rows="10"></textarea></label>
-              <label>Product PDF<input type="file" id="mPdf" accept="application/pdf"></label>
-              <div class="actions">
-                <button class="btn btn-primary" id="mSave">Save draft</button>
-                <button class="btn" id="mOpen">Open in my email app</button>
-              </div>
-              <p class="muted small">A browser page cannot send email by itself or attach files automatically. “Open in my email app” fills a new message; attach the PDF there. Real Gmail sending needs the Flask backend. Send only to relevant business contacts and honour unsubscribe requests.</p>
-            </div>
-          </div>
-          <div class="card"><h2>Email history</h2><div class="table-wrap"><table id="mailTable"></table></div></div>
-        </div>
-      </section>
+.sidebar nav {
+  flex: 1;
+  padding: 0 10px;
+}
 
-      <!-- IMPORT / EXPORT -->
-      <section class="view" id="view-importexport" hidden>
-        <div class="grid-2">
-          <div class="card">
-            <h2>Import leads from CSV</h2>
-            <p class="muted small">Headers: company_name, buyer_name, email, phone, country, state, city, website, buyer_category, product_category, source_website, lead_status. Duplicates are skipped.</p>
-            <div class="stack"><input type="file" id="csvFile" accept=".csv">
-              <div class="actions"><button class="btn btn-primary" id="csvImport">Import</button>
-              <button class="btn" id="csvTemplate">Download template</button></div></div>
-            <p id="importResult" class="small"></p>
-          </div>
-          <div class="card"><h2>Export buyer database</h2><button class="btn btn-primary" id="csvExport">Download CSV</button></div>
-        </div>
-        <div class="card"><h2>Demo sample data</h2>
-          <p class="muted small">10 fictional leads (example.com emails), labelled SAMPLE. Not real buyers.</p>
-          <div class="actions"><button class="btn btn-primary" id="sampleLoad">Load sample data</button>
-          <button class="btn btn-danger" id="sampleRemove">Remove sample data</button></div></div>
-      </section>
+.sidebar nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #cbd5e1;
+  padding: 11px 12px;
+  border-radius: 8px;
+  margin-bottom: 3px;
+}
 
-      <!-- REPORTS -->
-      <section class="view" id="view-reports" hidden>
-        <div class="grid-2">
-          <div class="card"><h2>By country</h2><div id="rCountry"></div></div>
-          <div class="card"><h2>By buyer category</h2><div id="rCategory"></div></div>
-          <div class="card"><h2>By lead status</h2><div id="rStatus"></div></div>
-          <div class="card"><h2>Email format</h2><div id="rEmail"></div></div>
-        </div>
-      </section>
-    </main>
-  </div>
+.sidebar nav a:hover {
+  background: var(--navy-2);
+  text-decoration: none;
+  color: #fff;
+}
 
-  <!-- ADD / EDIT MODAL -->
-  <dialog id="leadDialog">
-    <form id="leadForm" class="form-grid">
-      <h2 class="full" id="dialogTitle">Add Lead</h2>
-      <label>Company name<input name="company_name"></label>
-      <label>Buyer name<input name="buyer_name"></label>
-      <label>Email<input name="email" placeholder="name@company.com"></label>
-      <label>Phone<input name="phone"></label>
-      <label>Country<input name="country"></label>
-      <label>State<input name="state"></label>
-      <label>City<input name="city"></label>
-      <label>Website<input name="website" placeholder="https://"></label>
-      <label>Buyer category<select name="buyer_category"></select></label>
-      <label>Buyer type<select name="buyer_type"><option>Unclassified</option><option>Business</option><option>Individual</option></select></label>
-      <label>Product category<input name="product_category"></label>
-      <label>Source website<input name="source_website" placeholder="e.g. Google Maps"></label>
-      <label>Lead status<select name="lead_status"></select></label>
-      <label class="full">Notes<textarea name="notes" rows="2"></textarea></label>
-      <div class="full form-actions">
-        <button class="btn btn-primary" type="submit">Save Lead</button>
-        <button class="btn" type="button" id="dialogCancel">Cancel</button>
-      </div>
-    </form>
-  </dialog>
+.sidebar nav a.active {
+  background: var(--accent);
+  color: #fff;
+}
 
-  <script src="app.js"></script>
-</body>
-</html>
+.sidebar-foot {
+  font-size: 12px;
+  color: #94a3b8;
+  padding: 14px 20px;
+}
+
+/* Layout */
+.main {
+  margin-left: 240px;
+  min-height: 100vh;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.topbar h1 {
+  font-size: 20px;
+  margin: 0;
+  flex: 1;
+}
+
+.menu-btn {
+  display: none;
+  border: 0;
+  background: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.content {
+  padding: 24px;
+  max-width: 1300px;
+}
+
+/* Cards */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.07);
+  margin-bottom: 20px;
+}
+
+.card h2 {
+  font-size: 17px;
+  margin: 0 0 12px;
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.card-head h2 {
+  margin: 0;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.cards .card {
+  margin-bottom: 0;
+}
+
+.stat {
+  border-left: 4px solid var(--accent);
+}
+
+.stat.good {
+  border-left-color: var(--green);
+}
+
+.stat.bad {
+  border-left-color: var(--red);
+}
+
+.stat .label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.stat .value {
+  font-size: 30px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+.center {
+  text-align: center;
+  padding: 50px 20px;
+}
+
+.notice {
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  color: #9a3412;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+}
+
+/* Bars */
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.bar-label {
+  width: 150px;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.bar {
+  flex: 1;
+  background: #e8edf5;
+  border-radius: 6px;
+  height: 14px;
+  overflow: hidden;
+}
+
+.bar div {
+  background: var(--accent);
+  height: 100%;
+}
+
+.bar.alt div {
+  background: #0d9488;
+}
+
+.bar-count {
+  width: 28px;
+  text-align: right;
+  font-weight: 600;
+}
+
+/* Tables */
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--muted);
+  background: #f9fafb;
+}
+
+tr:hover td {
+  background: #fafbff;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.actions form {
+  margin: 0;
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: 4px;
+}
+
+.badge.green {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge.red {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge.blue {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge.purple {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.badge.grey {
+  background: #f3f4f6;
+  color: #4b5563;
+  margin-left: 0;
+}
+
+.badge.orange {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  padding: 9px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.btn:hover {
+  background: #f3f4f6;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--accent-dark);
+}
+
+.btn-danger {
+  color: var(--red);
+  border-color: #fecaca;
+}
+
+.btn-danger:hover {
+  background: #fef2f2;
+}
+
+.btn-small {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+/* Forms */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 14px;
+}
+
+.form-grid .full {
+  grid-column: 1 / -1;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+input, select, textarea {
+  font: inherit;
+  padding: 9px 11px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-weight: 400;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: var(--accent);
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.filters input[type=search] {
+  flex: 1;
+  min-width: 220px;
+}
+
+.inline-form {
+  margin: 0;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Misc */
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 13px;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 8px 16px;
+  margin: 12px 0 18px;
+}
+
+.details dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.details dd {
+  margin: 0;
+}
+
+.source-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.source {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+.source h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.small-cards {
+  margin-bottom: 12px;
+}
+
+/* Flash messages */
+.flash-area {
+  padding: 0 24px;
+}
+
+.flash {
+  margin-top: 16px;
+  padding: 12px 40px 12px 16px;
+  border-radius: 8px;
+  position: relative;
+}
+
+.flash-success {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.flash-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.flash-x {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  border: 0;
+  background: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: inherit;
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform .2s;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main {
+    margin-left: 0;
+  }
+
+  .menu-btn {
+    display: block;
+  }
+
+  .content, .flash-area {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .details {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Single-page version */
+.sidebar nav button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  color: #cbd5e1;
+  background: none;
+  border: 0;
+  padding: 11px 12px;
+  border-radius: 8px;
+  margin-bottom: 3px;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sidebar nav button:hover {
+  background: var(--navy-2);
+  color: #fff;
+}
+
+.sidebar nav button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* Toast messages */
+#toasts {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  max-width: 340px;
+}
+
+.toast.success {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.toast.error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* Dialog */
+dialog {
+  border: 0;
+  border-radius: var(--radius);
+  padding: 24px;
+  width: min(760px, 94vw);
+  box-shadow: 0 10px 40px rgba(0,0,0,.3);
+}
+
+dialog::backdrop {
+  background: rgba(15,23,42,.5);
+}
+
+/* Link buttons */
+.link-btn {
+  background: none;
+  border: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+textarea {
+  resize: vertical;
+}
